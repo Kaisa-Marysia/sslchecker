@@ -110,7 +110,7 @@ Records
 fi
 
 if [ "$source" == "update" ]; then
-  curl  -o /usr/bin/sslchecker
+  curl https://raw.githubusercontent.com/Kaisa-Marysia/sslchecker/main/sslchecker -o /usr/bin/sslchecker
   chmod +x /usr/bin/sslchecker
 fi
 
