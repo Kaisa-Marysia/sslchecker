@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+usage()
+{
+cat <<EOF
+Usage: $(basename $0) [options]
+Options:
+  -f    local file
+  -h    remote host
+  -p    custome port
+  -c    list ciphers
+  -u    update sslchecker
+  -v    show version
+  --help show this help page
+
+Exaple:
+  sslchecker -h letsencrypt.org // to check SSL cert
+  sslchecker -c letsencypt.org -p 8443 // to check ciphers on port 8443
+
+EOF
+}
+
+while [ "$1" ]; do
+  case "$1" in
+    -f)
+      shift
+      file="$1"
+      source="local"
+      ;;
+    -h)
+      shift
+      host="$1"
+      source="remote"
+      ;;
+    -p)
+      shift
+      port="$1"
+      ;;
+    -c)
+      shift
+      host="$1"
+      source="cipher"
+      ;;
+    -u)
+      shift
+      source="update"
+      ;;
+    -v)
+      shift
+      source="version"
+      ;;
+    --help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "see --help for usage"
+      exit 1
+      ;;
+  esac
+  shift
+done
+
+LocalCheck()
+{
+  openssl x509 -in $file -noout -text -certopt no_header,no_version,no_serial,no_signame,no_pubkey,no_sigdump,no_aux
+}
+
+RemoteCheck()
+{
+  nmap --script ssl-cert -p $port $host -oX - | xmlstarlet sel -t -m '/nmaprun/host/ports/port' -o "CA=\"" -v 'script/table/elem[@key="organizationName"]' -o "\"" -o $'\n' -o "BEGINN=\"" -v 'script/table/elem[@key="notBefore"]' -o "\"" -o $'\n' -o "ENDING=\"" -v 'script/table/elem[@key="notAfter"]' -o "\"" -o $'\n' -o "DOMAINS=\"" -v 'script/table/table[elem="X509v3 Subject Alternative Name"]/elem[@key="value"]' -o "\"" - 2>/dev/null | sed -e 's/DNS://g'
+}
+
+Records()
+{
+ipv4s=`dig +short A $host`
+ipv6s=`dig +short AAAA $host`
+
+for ipv4 in $ipv4s; do
+  echo -e " A: \t ${ipv4} \t PTR: `dig +short -x ${ipv4}`"
+done;
+
+for ipv6 in $ipv6s; do
+  echo -e " AAAA: \t ${ipv6} \t PTR: `dig +short -x ${ipv6}`"
+done;
+}
+if [[ "$source" == "local" ]]; then
+  if [ -z "$file" ]; then
+    exit 1
+  fi
+  LocalCheck
+fi
+
+if [ "$source" == "remote" ]; then
+if [ -z "$port" ]; then
+  port="443"
+fi
+
+source <(RemoteCheck)
+
+echo -e '\e[90m\e[1m\e[104mCert is valid for:\e[0m'
+echo \ $DOMAINS | sed 's/,/\n/g'
+echo -e '\e[90m\e[1m\e[101mValidated by:\e[0m'
+echo \ $CA
+echo -e '\e[90m\e[1m\e[43mValidated from to:\e[0m'
+echo \ $BEGINN
+echo \ $ENDING
+echo -e '\e[90m\e[1m\e[102mIP and Reverse Lookups:\e[0m'
+Records
+fi
+
+if [ "$source" == "update" ]; then
+  curl  -o /usr/bin/sslchecker
+  chmod +x /usr/bin/sslchecker
+fi
+
+if [ "$source" == "version" ]; then
+   echo "Version 2021-10-29"
+fi
+
+if [ "$source" == "cipher" ]; then
+if [ -z "$port" ]; then
+  port="443"
+fi
+echo -e '\e[90m\e[1m\e[104mTLS Version | Cipher | Kex \e[0m'
+  nmap --script ssl-enum-ciphers -p $port $host -oX - | xmlstarlet sel -t -m '//nmaprun/host/ports/port/script/table/table/table' -v '../../@key' -o " | " -v 'elem[@key="name"]' -o ' | ' -v 'elem[@key="kex_info"]' -n 2>/dev/null
+fi
