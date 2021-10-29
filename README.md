@@ -27,14 +27,18 @@ Options:
   --help show this help page
 ```
 ### SSL Certificates
-The local file option give you an overview about certificate file. Just use ```sslchecker -f /path/to/file``` <br>
-With the `-h` option you can check the ssl certificate of a remote host, like github.com. 
+The local file option give you an overview about certificate file. Just use ```sslchecker -f [/path/to/file]``` <br>
+With the `-h [host]` option you can check the ssl certificate of a remote host, like github.com. 
 
 ![](https://github.com/Kaisa-Marysia/sslchecker/blob/main/screenshot.png?raw=true)
 
-If your application runs on another port number, you may set the port with the `-p` option. <br>
+If your application runs on another port number, you may set the port with the `-p [port]` option. <br>
 ```sslchecker -h github.com -p 8443``` <br>
 
 ### TLS Ciphers
-To get a list of used ciphers use the `-c` option.
+To get a list of used ciphers of the use the `-c [host]` option.
+
 ![](https://github.com/Kaisa-Marysia/sslchecker/blob/main/screenshot2.png?raw=true)
+
+### Update
+The update option `-u` will download the script file from github into `/usr/bin/`. If you don't drop the script file into this path, the update option will. You need root priviliges for this.
