@@ -2,6 +2,9 @@
 # sslchecker
 **sslcheker** is wrapper written in bash for openssl and nmap, which checks the ssl certs and used TLS ciphers of a host. This tool checks when a certificate has been valid and when it expires. Also you get the information about the CA, for which domains the SSL certificate is valid and the IP adresse and PTR Record of the host. 
 
+## Depends
+You need 'nmap', 'openssl' and 'xmlstarlet'.
+
 ## Install
 Copy this repository <br>
 ```git clone https://github.com/Kaisa-Marysia/sslchecker``` <br>
