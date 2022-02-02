@@ -1,5 +1,4 @@
-#!/usr/bin/env bash
-
+#!/bin/bash
 usage()
 {
 cat <<EOF
@@ -71,6 +70,11 @@ RemoteCheck()
   nmap --script ssl-cert -p $port $host -oX - | xmlstarlet sel -t -m '/nmaprun/host/ports/port' -o "CA=\"" -v 'script/table/elem[@key="organizationName"]' -o "\"" -o $'\n' -o "BEGINN=\"" -v 'script/table/elem[@key="notBefore"]' -o "\"" -o $'\n' -o "ENDING=\"" -v 'script/table/elem[@key="notAfter"]' -o "\"" -o $'\n' -o "DOMAINS=\"" -v 'script/table/table[elem="X509v3 Subject Alternative Name"]/elem[@key="value"]' -o "\"" - 2>/dev/null | sed -e 's/DNS://g'
 }
 
+RemoteCheck6()
+{
+  nmap -6 --script ssl-cert -p $port $host -oX - | xmlstarlet sel -t -m '/nmaprun/host/ports/port' -o "CA=\"" -v 'script/table/elem[@key="organizationName"]' -o "\"" -o $'\n' -o "BEGINN=\"" -v 'script/table/elem[@key="notBefore"]' -o "\"" -o $'\n' -o "ENDING=\"" -v 'script/table/elem[@key="notAfter"]' -o '"' -o $'\n' -o "DOMAINS=\"" -v 'script/table/table[elem="X509v3 Subject Alternative Name"]/elem[@key="value"]' -o "\"" - 2>/dev/null | sed -e 's/DNS://g'
+}
+
 Records()
 {
 ipv4s=`dig +short A $host`
@@ -96,7 +100,13 @@ if [ -z "$port" ]; then
   port="443"
 fi
 
-source <(RemoteCheck)
+if RemoteCheck 2>&1 | grep -q -s -cim1 "not to any IPv4 address."; then
+  source <(RemoteCheck6);
+else
+  source <(RemoteCheck);
+fi
+
+#source <(RemoteCheck)
 
 echo -e '\e[90m\e[1m\e[104mCert is valid for:\e[0m'
 echo \ $DOMAINS | sed 's/,/\n/g'
@@ -115,7 +125,7 @@ if [ "$source" == "update" ]; then
 fi
 
 if [ "$source" == "version" ]; then
-   echo "Version 2021-10-29"
+   echo "Version 2022-02-02"
 fi
 
 if [ "$source" == "cipher" ]; then
